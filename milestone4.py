@@ -1,3 +1,7 @@
+import dash
+import pandas as pd
+import io
+import base64
 from dash import dcc, html, Input, Output, State, callback
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingRegressor
@@ -7,10 +11,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
-import dash
-import pandas as pd
-import io
-import base64
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 
