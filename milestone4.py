@@ -12,16 +12,15 @@ import pandas as pd
 import io
 import base64
 
-# Initialize the Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 
-# Global variables to store uploaded data and trained model
+# global variables
 uploaded_file_content = None
 trained_model = None
 feature_order = []
 categorical_columns = []
 
-# App Layout
+# app layout
 app.layout = html.Div([
     dcc.Upload(
         id='upload-data',
@@ -90,12 +89,12 @@ app.layout = html.Div([
     ], style={'width': '50%', 'margin': '20px auto', 'textAlign': 'center'})
 ])
 
-# Function to preprocess the data
+# data preprocessing
 def preprocess_data(df):
     df = df.fillna(df.median(numeric_only=True))
     return df
 
-# Callback to handle file upload
+# file upload
 @callback(
     [Output('output-data-upload', 'children'),
      Output('dropdown-container', 'children'),
@@ -141,11 +140,10 @@ def update_output(contents):
 
     return html.Div(""), None, None, []
 
-# Callback to update the bar chart for averages
 @callback(
     Output('bar-chart-average', 'figure'),
     [Input('categorical-variable-radio', 'value'),
-     Input('target-variable-dropdown', 'value')]  # Changed from State to Input
+     Input('target-variable-dropdown', 'value')] 
 )
 def update_bar_chart(categorical_var, target_var):
     global uploaded_file_content
@@ -177,7 +175,6 @@ def update_bar_chart(categorical_var, target_var):
         }
     }
 
-# Callback to update the correlation bar chart
 @callback(
     Output('bar-chart-correlation', 'figure'),
     Input('target-variable-dropdown', 'value')
@@ -209,7 +206,6 @@ def update_correlation_chart(target_var):
 
     return {}
 
-# Callback to train the Gradient Boosting Regressor
 @callback(
     Output('r2-score-display', 'children'),
     Input('train-button', 'n_clicks'),
@@ -224,10 +220,8 @@ def train_model(n_clicks, target_var, selected_features):
         y = uploaded_file_content[target_var]
         feature_order = selected_features
 
-        # Split the dataset
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Preprocessing for numeric and categorical features
         numeric_features = X.select_dtypes(include=['number']).columns
         categorical_features = X.select_dtypes(include=['object', 'category']).columns
 
@@ -244,7 +238,6 @@ def train_model(n_clicks, target_var, selected_features):
             ]
         )
 
-        # Define the Gradient Boosting Regressor and Grid Search
         param_grid = {
             'regressor__n_estimators': [50, 100, 200],
             'regressor__max_depth': [3, 5, 10],
@@ -259,35 +252,28 @@ def train_model(n_clicks, target_var, selected_features):
             pipeline, param_grid, cv=5, scoring='r2', n_jobs=-1, verbose=1
         )
 
-        # Fit the model
         grid_search.fit(X_train, y_train)
 
-        # Save the best model
         trained_model = grid_search.best_estimator_
 
-        # Evaluate the model
         y_pred = trained_model.predict(X_test)
         r2 = r2_score(y_test, y_pred)
 
         return (f"R² Score: {r2:.2f}")
 
-    return "Please ensure you have selected features and a target variable."
+    return "Please select your features."
 
-# Callback for prediction
 @callback(
     Output('prediction-output', 'children'),
     Input('predict-button', 'n_clicks'),
     [State('prediction-input', 'value'),
-     State('target-variable-dropdown', 'value')]  # Add target variable state
+     State('target-variable-dropdown', 'value')]
 )
 def make_prediction(n_clicks, input_values, target_var):
     global trained_model, feature_order, categorical_columns
 
     if n_clicks > 0 and input_values and trained_model:
-        if not target_var:
-            return "Please select a target variable before making predictions."
         
-        try:
             input_values = [x.strip() for x in input_values.split(',')]
             for i, col in enumerate(feature_order):
                 if col in categorical_columns:
@@ -298,13 +284,8 @@ def make_prediction(n_clicks, input_values, target_var):
             input_df = pd.DataFrame([input_values], columns=feature_order)
             prediction = trained_model.predict(input_df)
             return f"Predicted {target_var}: {prediction[0]:.2f}"
-        except Exception as e:
-            return f"Error in prediction: {str(e)}"
 
-    return "No prediction made yet."
-
-
-
+    return "Please enter values to make a prediction."
 
 if __name__ == '__main__':
     app.run_server(debug=False)
