@@ -288,4 +288,4 @@ def make_prediction(n_clicks, input_values, target_var):
     return "Please enter values to make a prediction."
 
 if __name__ == '__main__':
-    app.run_server(debug=False, port=8051)
+    app.run_server(debug=False, port=8052)
